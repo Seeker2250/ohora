@@ -1176,5 +1176,105 @@ $("#checkcolor2").on("click", function() {
     }
 });
 </script>
+<script>
+//cart.jsp 또는 다른 페이지에서 사용할 쿠키 관련 함수들
+document.addEventListener('DOMContentLoaded', function() {
+    // 쿠키에서 장바구니 정보 가져오기
+    let basketItems = getCookie("basketItems");
+    
+    if(basketItems) {
+        let items = JSON.parse(basketItems);
+        
+        // 장바구니 아이템 표시
+        displayCartItems(items);
+        
+        // 총 금액 계산
+        updateTotalPrice(items);
+        
+        // 총 수량 표시
+        updateQuantityDisplay(items);
+    }
+});
+//쿠키 조회 함수 (동일한 함수 재사용)
+function getCookie(name) {
+    let matches = document.cookie.match(new RegExp(
+        "(?:^|; )" + name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, '\\$1') + "=([^;]*)"
+    ));
+    return matches ? decodeURIComponent(matches[1]) : undefined;
+}
+
+// 장바구니 아이템 표시
+function displayCartItems(items) {
+    const cartContainer = document.querySelector('.cart-items-container');
+    
+    items.forEach(item => {
+        cartContainer.innerHTML += `
+            <div class="cart-item" data-id="${item.id}">
+                <div class="item-info">
+                    <p>상품번호: ${item.id}</p>
+                    <p>가격: ${Number(item.price).toLocaleString()}원</p>
+                    <p>수량: ${item.quantity}</p>
+                </div>
+                <div class="item-control">
+                    <button onclick="updateItemQuantity('${item.id}', 1)">+</button>
+                    <button onclick="updateItemQuantity('${item.id}', -1)">-</button>
+                    <button onclick="removeItem('${item.id}')">삭제</button>
+                </div>
+            </div>
+        `;
+    });
+}
+
+// 수량 업데이트
+function updateItemQuantity(itemId, change) {
+    let basketItems = getCookie("basketItems");
+    let items = JSON.parse(basketItems);
+    
+    let item = items.find(item => item.id === itemId);
+    if(item) {
+        item.quantity = Math.max(1, (item.quantity || 1) + change);
+        document.cookie = "basketItems=" + JSON.stringify(items) + "; path=/";
+        
+        // 페이지 새로고침 대신 동적 업데이트
+        updateCartDisplay(items);
+    }
+}
+
+// 아이템 삭제
+function removeItem(itemId) {
+    let basketItems = getCookie("basketItems");
+    let items = JSON.parse(basketItems);
+    
+    items = items.filter(item => item.id !== itemId);
+    document.cookie = "basketItems=" + JSON.stringify(items) + "; path=/";
+    
+    // 페이지 새로고침 대신 동적 업데이트
+    updateCartDisplay(items);
+}
+
+// 총 금액 계산
+function updateTotalPrice(items) {
+    const total = items.reduce((sum, item) => 
+        sum + (item.price * (item.quantity || 1)), 0);
+    
+    document.querySelector('.total-price').textContent = 
+        `총 금액: ${total.toLocaleString()}원`;
+}
+
+// 전체 화면 업데이트
+function updateCartDisplay(items) {
+    // 목록 새로 그리기
+    const cartContainer = document.querySelector('.cart-items-container');
+    cartContainer.innerHTML = '';
+    displayCartItems(items);
+    
+    // 총 금액 업데이트
+    updateTotalPrice(items);
+    
+    // 헤더의 장바구니 카운트 업데이트
+    let totalQuantity = items.reduce((sum, item) => sum + (item.quantity || 1), 0);
+    document.querySelector(".count.EC-Layout-Basket-count").textContent = totalQuantity;
+}
+</script>
 <%@include file="footer.jsp" %>
 </html>

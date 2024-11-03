@@ -32,51 +32,84 @@ public class OhoraDAOImpl implements OhoraDAO{
 	}
 
 	@Override
-	public ArrayList<DeptVO> selectTest() throws SQLException {
-		int deptno;
-		String dname;
-		String loc;
-		
-		ArrayList<DeptVO> list = null;
-		String sql = "SELECT * FROM dept";
-		
-		DeptVO dvo = null;
-		
-		try {
-			pstmt = conn.prepareStatement(sql);
-			rs = pstmt.executeQuery();
-			
-			if (rs.next()) {
-				list = new ArrayList<DeptVO>();
-				do {
+	   public ArrayList<ProductDTO> select(int currentPage, int numberPerPage) throws SQLException {
 
-					deptno = rs.getInt("deptno");
-					dname = rs.getString("dname");
-					loc = rs.getString("loc");
+	      int pdt_id;
+	         String pdt_name;
+	         int pdt_amount;
+	         int pdt_discount_rate;
+	         String pdt_img_url;
+	         int pdt_review_count;
+	         int pdt_discount_amount;
+	         
+	         ArrayList<ProductDTO> list = null;
+	         
+	         
+	         
+	         String sql = "SELECT * FROM ( "
+	               + "SELECT ROWNUM no, t.* FROM ("
+	               + "SELECT pdt_id, pdt_name, pdt_amount, pdt_discount_rate, pdt_img_url, pdt_review_count, pdt_adddate "
+	               + "FROM O_PRODUCT "
+	               // + "ORDER BY pdt_adddate DESC "
+	               + ") t "
+	               + ") b "
+	               + "WHERE no BETWEEN ? AND ? ";
+	         
+	         ProductDTO pdt = null;
+	         int start = (currentPage-1) * numberPerPage + 1;
+	         int end = start + numberPerPage -1;
+	         int totalRecords = getTotalRecords();
+	         if (end > totalRecords) end = totalRecords;
+	         
+	         try {
+	            pstmt = conn.prepareStatement(sql);
+	            pstmt.setInt(1, start);
+	            pstmt.setInt(2, end);
+	            rs = pstmt.executeQuery();
+	            
+	            if (rs.next()) {
+	               list = new ArrayList<ProductDTO>();
+	               do {
+	                  pdt_id = rs.getInt("pdt_id");
+	                  pdt_name = rs.getString("pdt_name");
+	                  pdt_amount = rs.getInt("pdt_amount");
+	                  pdt_discount_rate = rs.getInt("pdt_discount_rate");
+	                  pdt_img_url = rs.getString("pdt_img_url");
+	                  pdt_review_count = rs.getInt("pdt_review_count");
+	                  
+	                  if (pdt_discount_rate != 0) {
+	                     pdt_discount_amount = (int)(pdt_amount - (pdt_amount * (pdt_discount_rate / 100.0f)));                  
+	                  } else {
+	                     pdt_discount_amount = pdt_amount;
+	                  }
 
-					dvo = new DeptVO().builder()
-							.deptno(deptno)
-							.dname(dname)
-							.loc(loc)
-							.build();
+	                  pdt = new ProductDTO().builder()
+	                        .pdt_id(pdt_id)
+	                        .pdt_name(pdt_name)
+	                        .pdt_amount(pdt_amount)
+	                        .pdt_discount_rate(pdt_discount_rate)
+	                        .pdt_img_url(pdt_img_url)
+	                        .pdt_review_count(pdt_review_count)
+	                        .pdt_discount_amount(pdt_discount_amount)
+	                        .build();
 
-					list.add(dvo);
+	                  list.add(pdt);
 
-				} while (rs.next());
-				
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		} finally {
-			try {
-				rs.close();
-				pstmt.close();
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
-		return list;
-	}
+	               } while (rs.next());
+	               
+	            }
+	         } catch (Exception e) {
+	            e.printStackTrace();
+	         } finally {
+	            try {
+	               rs.close();
+	               pstmt.close();
+	            } catch (Exception e) {
+	               e.printStackTrace();
+	            }
+	         }
+	         return list;
+	   }
 	
 	@Override
 	public int getTotalRecords() throws SQLException {

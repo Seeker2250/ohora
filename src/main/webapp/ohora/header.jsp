@@ -153,7 +153,7 @@
             <div
               class="xans-element- xans-layout xans-layout-orderbasketcount small_icon m_cart common_cart"
             >
-              <a href="/order/basket.html"
+              <a href="/ohora/iscart.html"
                 ><b class="count EC-Layout-Basket-count">0</b></a
               >
             </div>
